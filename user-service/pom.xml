@@ -10,9 +10,13 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
+	<groupId>com.demo</groupId>
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>user-service</artifactId>
-	<packaging>jar</packaging>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>user-service</name>
+	<description>User Service for Online Business</description>
+	<url/>
 
 	<dependencies>
 		<!-- Spring Boot Starters -->

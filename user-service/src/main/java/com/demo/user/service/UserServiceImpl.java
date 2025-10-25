@@ -3,7 +3,7 @@ package com.demo.user.service;
 import org.apache.dubbo.config.annotation.DubboService;
 import com.demo.user.api.UserService;
 
-@DubboService
+@DubboService(version = "1.0.0")
 public class UserServiceImpl implements UserService {
 
     @Override
