@@ -1,8 +1,12 @@
 package com.demo.user.controller;
 
+import com.demo.user.dto.LoginRequest;
+import com.demo.user.dto.RegisterRequest;
+import com.demo.user.dto.UserDTO;
 import com.demo.user.entity.User;
 import com.demo.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import com.demo.user.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,18 +20,13 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody Map<String, String> body) {
-        User user = userService.register(body.get("username"), body.get("email"), body.get("password"));
-        return ResponseEntity.ok(user);
+    public ApiResponse<UserDTO> register(@RequestBody RegisterRequest request) {
+        return ApiResponse.success(userService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        User user = userService.login(body.get("username"), body.get("password"));
-        return ResponseEntity.ok(Map.of(
-                "token", user.getPassword(), // token stored in Redis
-                "user", user.getUsername()
-        ));
+    public ApiResponse<String> login(@RequestBody LoginRequest request) {
+        return ApiResponse.success(userService.login(request));
     }
 
     @GetMapping("/me")
@@ -43,5 +42,22 @@ public class UserController {
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
         userService.logout(token);
         return ResponseEntity.ok(Map.of("message", "Logged out"));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<UserDTO> getUser(@PathVariable("id") Long id) {
+        return ApiResponse.success(userService.getUserById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<Void> updateUser(@PathVariable("id") Long id, @RequestBody UserDTO dto) {
+        userService.updateUser(id, dto);
+        return ApiResponse.success(null);
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteUser(@PathVariable("id") Long id) {
+        userService.deleteUser(id);
+        return ApiResponse.success(null);
     }
 }

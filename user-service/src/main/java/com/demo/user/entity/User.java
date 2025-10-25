@@ -32,6 +32,10 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    private String nickname;
+
+    private Boolean active = true;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

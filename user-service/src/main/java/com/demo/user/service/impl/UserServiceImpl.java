@@ -1,10 +1,18 @@
 package com.demo.user.service.impl;
 
+import com.demo.user.dto.LoginRequest;
+import com.demo.user.dto.RegisterRequest;
+import com.demo.user.dto.UserDTO;
 import com.demo.user.entity.User;
+import com.demo.user.exception.BusinessException;
 import com.demo.user.repository.UserRepository;
 import com.demo.user.service.UserService;
+import com.demo.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,45 +32,40 @@ public class UserServiceImpl implements UserService {
 
     private static final String SESSION_PREFIX = "session:";
 
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @Override
-    public User register(String username, String email, String password) {
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists");
-        }
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists");
+    public UserDTO register(RegisterRequest request) {
+        if (userRepository.findByUsername(request.username()).isPresent()) {
+            throw new BusinessException("Username already exists");
         }
 
-        User user = User.builder()
-                .username(username)
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .build();
+        User user = new User();
+        user.setUsername(request.username());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setEmail(request.email());
 
-        return userRepository.save(user);
+        user = userRepository.save(user);
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getNickname());
     }
 
     @Override
-    public User login(String username, String password) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public String login(LoginRequest request) {
+        User user = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> new BusinessException("Invalid username or password"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException("Invalid username or password");
         }
 
-        // generate session token
-        String token = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set(SESSION_PREFIX + token, user.getId().toString(), Duration.ofHours(2));
-
-        // attach temporary token
-        user.setPassword(token);
-        return user;
+        return jwtUtil.generateToken(user.getId());
     }
 
     @Override
     public User getUserFromSession(String sessionToken) {
-        String userId = redisTemplate.opsForValue().get(SESSION_PREFIX + sessionToken);
+        String userId = redisTemplate.opsForValue().get(SESSION_PREFIX + sessionToken); // todo fix it
         if (userId == null) return null;
 
         return userRepository.findById(Long.valueOf(userId)).orElse(null);
@@ -70,6 +73,34 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void logout(String sessionToken) {
-        redisTemplate.delete(SESSION_PREFIX + sessionToken);
+        redisTemplate.delete(SESSION_PREFIX + sessionToken); // todo fix it
+    }
+
+    @Override
+    @Cacheable(value = "user", key = "#p0")
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getNickname());
+    }
+
+    @Override
+    @CacheEvict(value = "user", key = "#p0")
+    public void updateUser(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+
+        user.setNickname(userDTO.nickname());
+        user.setEmail(userDTO.email());
+        userRepository.save(user);
+    }
+
+    @Override
+    @CacheEvict(value = "user", key = "#p0")
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        user.setActive(false);
+        userRepository.save(user);
     }
 }
