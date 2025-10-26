@@ -1,0 +1,56 @@
+server:
+  port: 8082
+#  servlet:
+#    context-path: /product
+
+spring:
+  application:
+    name: product-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/online_business_product?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      timeout: 5000
+  cache: # Optional cache config
+    type: redis
+
+#dubbo:
+#  application:
+#    name: user-service
+#  registry:
+#    address: nacos://127.0.0.1:8848
+#  protocol:
+#    name: dubbo
+#    port: 26880
+#  provider:
+#    timeout: 3000
+#    retries: 0
+
+dubbo:
+  application:
+    name: ${spring.application.name}
+  registry:
+    address: nacos://127.0.0.1:8848
+  protocol:
+    name: dubbo
+    port: 26881
+
+nacos:
+  discovery:
+    server-addr: 127.0.0.1:8848
+
+logging:
+  level:
+    root: INFO
