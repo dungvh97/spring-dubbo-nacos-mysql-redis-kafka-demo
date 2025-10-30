@@ -46,6 +46,8 @@ dubbo:
   protocol:
     name: dubbo
     port: 26881
+  scan:
+    base-packages: com.demo.product  # adjust to your actual package
 
 nacos:
   discovery:

@@ -258,31 +258,44 @@ online-business/
 
 ---
 
-## 🧰 12. Flow Example: Product Query via Dubbo
+## 🧰 12. Flow Example: Order Creation via Dubbo
 
 ```declarative
-             [ HTTP Request ]
+
+[ HTTP POST /api/orders ]
+
+{
+"userId": 1,
+"productId": 1001,
+"quantity": 2
+}
+
+
 │
 ▼
 ┌────────────────────────────────────────────┐
-│  UserController (user-service)             │
-│  - Handles endpoint: /api/user/favorites   │
-│  - Returns ApiResponse<List<ProductDTO>>   │
+│ OrderController (order-service)            │
+│ - Handles endpoint: /api/orders            │
+│ - Maps request body to CreateOrderRequest  │
+│ - Calls OrderService.createOrder()         │
 └────────────────────────────────────────────┘
 │ calls
 ▼
-┌────────────────────────────────────────────┐
-│  UserService (user-service)                │
-│  - Business logic for user operations      │
-│  - Uses Dubbo RPC to call product-service  │
-└────────────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│ OrderService (order-service)                   │
+│ - Contains business logic for orders           │
+│ - Validates request & checks rules             │
+│ - Calls ProductFacade.decreaseStock() via Dubbo RPC │
+│ - Persists Order entity via OrderRepository    │
+│ - Returns OrderDTO                             │   
+└────────────────────────────────────────────────┘
 │ uses
 ▼
 ┌────────────────────────────────────────────┐
-│  @DubboReference ProductFacade             │
-│  - Defined in common-dubbo-api module      │
-│  - Interface shared by all services        │
-│  - Nacos handles provider discovery        │
+│ @DubboReference ProductFacade              │
+│ - Defined in common-dubbo-api module       │
+│ - Interface shared across services         │
+│ - Nacos handles provider discovery         │
 └────────────────────────────────────────────┘
 │
 ▼
@@ -290,28 +303,35 @@ online-business/
 │
 ▼
 ┌────────────────────────────────────────────┐
-│  @DubboService ProductFacadeImpl           │
-│  (product-service)                         │
-│  - Implements ProductFacade interface      │
-│  - Exposed to other microservices via Dubbo│
+│ @DubboService ProductFacadeImpl            │
+│ (product-service)                          │
+│ - Implements ProductFacade interface       │
+│ - Decreases stock in DB for productId      │
+│ - Exposed to other microservices via Dubbo │
 └────────────────────────────────────────────┘
 │
 ▼
 ┌────────────────────────────────────────────┐
-│  ProductService + ProductRepository        │
-│  (product-service)                         │
-│  - Contains core business logic            │
-│  - Uses Spring Data JPA to fetch from MySQL│
+│ ProductService + ProductRepository         │
+│ (product-service)                          │
+│ - Core product business logic              │
+│ - Updates stock in MySQL via JPA           │
 └────────────────────────────────────────────┘
 │
 ▼
-[ return ProductDTO ]
+[ return void / success flag ]
+│
+▼
+┌────────────────────────────────────────────────┐
+│ OrderService (order-service)                   │
+│ - Receives response from ProductFacade         │
+│ - Completes Order creation & wraps as OrderDTO │
+└────────────────────────────────────────────────┘
 │
 ▼
 ┌────────────────────────────────────────────┐
-│  UserController (user-service)             │
-│  - Wraps ProductDTO list into ApiResponse  │
-│  - Returns JSON to REST client             │
+│ OrderController (order-service)            │
+│ - Returns OrderDTO as JSON to REST client  │
 └────────────────────────────────────────────┘
 
 ```
