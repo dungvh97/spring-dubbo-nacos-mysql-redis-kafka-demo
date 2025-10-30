@@ -1,5 +1,6 @@
 package com.demo.user.controller;
 
+import com.demo.common.api.product.ProductDTO;
 import com.demo.user.dto.LoginRequest;
 import com.demo.user.dto.RegisterRequest;
 import com.demo.user.dto.UserDTO;
@@ -60,4 +61,9 @@ public class UserController {
         userService.deleteUser(id);
         return ApiResponse.success(null);
     }
+
+//    @PostMapping("/favorite-products")
+//    public ApiResponse<List<ProductDTO>> getUserFavorites(@RequestBody UserFavoriteRequest req) {
+//        return ApiResponse.success(userService.getFavoriteProducts(req.getUserId()));
+//    }
 }

@@ -1,5 +1,6 @@
 package com.demo.user.exception;
 
+import com.demo.common.exception.BusinessException;
 import com.demo.user.response.ApiResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

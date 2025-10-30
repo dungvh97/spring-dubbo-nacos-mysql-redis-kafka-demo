@@ -1,7 +1,3 @@
-Perfect 👍 — you want a **learning-friendly microservice architecture** in **Java 17 + Spring Boot 3.5.7**, using **Dubbo + Nacos + Redis + MySQL**, plus optional **Kafka** for async communication.
-
-Let’s design a **3–5 service online business backend**, with a clean modular structure, real-world patterns, and clear learning milestones.
-
 ---
 
 ## 🏗️ 1. Overall Project Overview
@@ -136,27 +132,56 @@ Kafka:
 ```
 online-business/
 │
-├── common/                       # Shared utilities
-│   ├── common-model/             # DTOs, response wrapper
-│   ├── common-util/              # Constants, helpers
-│   └── common-dubbo-api/         # Dubbo interfaces
+├── pom.xml                            # Parent POM (dependency management, plugin management)
 │
-├── user-service/                 # User microservice
+├── common/
+│   ├── common-dubbo-api/              # Shared Dubbo interfaces + DTOs only
+│   │   ├── src/main/java/com/demo/common/api/
+│   │   │   ├── user/                  # RPC DTOs + interfaces for User
+│   │   │   │   ├── UserDTO.java
+│   │   │   │   └── UserFacade.java
+│   │   │   ├── product/               # RPC DTOs + interfaces for Product
+│   │   │   │   ├── ProductDTO.java
+│   │   │   │   └── ProductFacade.java
+│   │   │   └── common/
+│   │   │       ├── ApiResponse.java
+│   │   │       └── PageResult.java
+│   │   └── pom.xml
+│   │
+│   ├── common-util/                   # Common utils (DateUtil, JwtUtil, etc.)
+│   └── common-model/                  # Common enums/constants (e.g. ErrorCode, Roles)
+│
+├── user-service/
 │   ├── src/main/java/com/demo/user/
-│   ├── application.yml
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── repository/
+│   │   ├── entity/
+│   │   └── config/
+│   ├── src/main/resources/
+│   │   ├── application.yml
+│   │   └── bootstrap.yml (optional if using Nacos config)
+│   ├── pom.xml
 │
 ├── product-service/
 │   ├── src/main/java/com/demo/product/
-│   ├── application.yml
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── repository/
+│   │   ├── entity/
+│   │   └── config/
+│   ├── src/main/resources/application.yml
+│   └── pom.xml
 │
 ├── order-service/
 │   ├── src/main/java/com/demo/order/
-│   ├── application.yml
+│   ├── src/main/resources/application.yml
+│   └── pom.xml
 │
-├── gateway-service/ (optional)
+├── gateway-service/                   # Optional Spring Cloud Gateway or Dubbo Gateway
 │
-├── pom.xml                       # Parent POM
 └── README.md
+
 ```
 
 ---
@@ -233,13 +258,60 @@ online-business/
 
 ---
 
-## ✅ 12. Next Step
+## 🧰 12. Flow Example: Product Query via Dubbo
 
-If you want, I can **generate the complete Maven structure** (with parent + 3 microservices) including:
+```declarative
+             [ HTTP Request ]
+│
+▼
+┌────────────────────────────────────────────┐
+│  UserController (user-service)             │
+│  - Handles endpoint: /api/user/favorites   │
+│  - Returns ApiResponse<List<ProductDTO>>   │
+└────────────────────────────────────────────┘
+│ calls
+▼
+┌────────────────────────────────────────────┐
+│  UserService (user-service)                │
+│  - Business logic for user operations      │
+│  - Uses Dubbo RPC to call product-service  │
+└────────────────────────────────────────────┘
+│ uses
+▼
+┌────────────────────────────────────────────┐
+│  @DubboReference ProductFacade             │
+│  - Defined in common-dubbo-api module      │
+│  - Interface shared by all services        │
+│  - Nacos handles provider discovery        │
+└────────────────────────────────────────────┘
+│
+▼
+( RPC over Dubbo + Nacos registry )
+│
+▼
+┌────────────────────────────────────────────┐
+│  @DubboService ProductFacadeImpl           │
+│  (product-service)                         │
+│  - Implements ProductFacade interface      │
+│  - Exposed to other microservices via Dubbo│
+└────────────────────────────────────────────┘
+│
+▼
+┌────────────────────────────────────────────┐
+│  ProductService + ProductRepository        │
+│  (product-service)                         │
+│  - Contains core business logic            │
+│  - Uses Spring Data JPA to fetch from MySQL│
+└────────────────────────────────────────────┘
+│
+▼
+[ return ProductDTO ]
+│
+▼
+┌────────────────────────────────────────────┐
+│  UserController (user-service)             │
+│  - Wraps ProductDTO list into ApiResponse  │
+│  - Returns JSON to REST client             │
+└────────────────────────────────────────────┘
 
-* Working example code
-* Application.yml templates
-* Dubbo + Nacos configs
-* Sample API controllers
-
-Would you like me to generate that starter project layout next?
+```
