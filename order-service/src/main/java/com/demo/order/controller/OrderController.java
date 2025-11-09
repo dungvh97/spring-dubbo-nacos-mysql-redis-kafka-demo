@@ -16,7 +16,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest req) {
+    public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest req) throws Exception {
         OrderDTO dto = orderService.createOrder(req);
         return ResponseEntity.ok(dto);
     }

@@ -3,6 +3,7 @@ package com.demo.product.facade.impl;
 import com.demo.common.api.product.ProductDTO;
 import com.demo.common.api.product.ProductFacade;
 import com.demo.product.repository.ProductRepository;
+import com.demo.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 import com.demo.product.entity.Product;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class ProductFacadeImpl implements ProductFacade {
 
     private final ProductRepository repo;
+    private final ProductService productService;
 
     @Override
     public ProductDTO getProductById(Long id) {
@@ -45,19 +47,24 @@ public class ProductFacadeImpl implements ProductFacade {
 
     /**
      * Decrease stock in a transactional way on product-service side.
+     * Uses ProductService to ensure cache invalidation.
      */
     @Override
     @Transactional
     public boolean decreaseStock(Long productId, int qty) {
-        // load current product
+        // load current product to check stock
         Product p = repo.findById(productId).orElse(null);
         if (p == null) return false;
         if (p.getStock() == null || p.getStock() < qty) {
             return false; // insufficient stock
         }
-        p.setStock(p.getStock() - qty);
-        repo.save(p);
-        return true;
+        // Use ProductService to reduce stock, which will handle cache invalidation
+        try {
+            productService.reduceStock(productId, qty);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private ProductDTO toDto(Product p) {

@@ -3,7 +3,6 @@ package com.demo.common.api.order;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -16,5 +15,4 @@ public class OrderDTO {
     private Integer quantity;
     private BigDecimal totalAmount;
     private String status;
-    private LocalDateTime createdAt;
 }

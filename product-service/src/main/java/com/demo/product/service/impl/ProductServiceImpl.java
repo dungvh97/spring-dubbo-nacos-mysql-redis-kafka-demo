@@ -57,4 +57,16 @@ public class ProductServiceImpl implements ProductService {
         System.out.println("Fetching product from DB");
         return repo.findAll();
     }
+
+    @Override
+    @CacheEvict(value = {"products", "allProducts"}, allEntries = true)
+    public void reduceStock(Long productId, Integer quantity) {
+        Product product = repo.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("Insufficient stock");
+        }
+        product.setStock(product.getStock() - quantity);
+        repo.save(product);
+    }
 }

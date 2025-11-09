@@ -4,9 +4,11 @@ import com.demo.common.api.order.CreateOrderRequest;
 import com.demo.common.api.order.OrderDTO;
 import com.demo.common.api.product.ProductFacade;
 import com.demo.order.entity.OrderEntity;
+import com.demo.order.kafka.OrderProducer;
 import com.demo.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,9 @@ public class OrderService {
     @DubboReference(version = "1.0.0", timeout = 5000, check = false)
     private ProductFacade productFacade;
 
+    @Autowired
+    private OrderProducer orderProducer;
+
     /**
      * Create an order:
      * 1) Call product-service.decreaseStock(productId, qty)
@@ -29,7 +34,7 @@ public class OrderService {
      *    (note: the product stock change already occurred in product-service's DB)
      */
     @Transactional
-    public OrderDTO createOrder(CreateOrderRequest req) {
+    public OrderDTO createOrder(CreateOrderRequest req) throws Exception {
         boolean ok = productFacade.decreaseStock(req.getProductId(), req.getQuantity());
         if (!ok) {
             throw new RuntimeException("Insufficient stock or product error");
@@ -50,6 +55,9 @@ public class OrderService {
 
         order = orderRepository.save(order);
 
+        // async publish to Kafka
+        orderProducer.sendOrderCreated(order);
+
         // build DTO
         return OrderDTO.builder()
                 .id(order.getId())
@@ -58,7 +66,6 @@ public class OrderService {
                 .quantity(order.getQuantity())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
-                .createdAt(order.getCreatedAt())
                 .build();
     }
 }
