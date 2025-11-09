@@ -3,7 +3,6 @@ package com.demo.order.controller;
 import com.demo.common.api.order.CreateOrderRequest;
 import com.demo.common.api.order.OrderDTO;
 import com.demo.order.service.OrderService;
-import com.demo.common.api.ApiResponse; // if you keep ApiResponse shared; otherwise create local
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

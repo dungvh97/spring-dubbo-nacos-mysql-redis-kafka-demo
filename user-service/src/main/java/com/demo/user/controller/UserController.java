@@ -1,6 +1,5 @@
 package com.demo.user.controller;
 
-import com.demo.common.api.product.ProductDTO;
 import com.demo.user.dto.LoginRequest;
 import com.demo.user.dto.RegisterRequest;
 import com.demo.user.dto.UserDTO;
