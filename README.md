@@ -1,5 +1,3 @@
----
-
 ## 🏗️ 1. Overall Project Overview
 
 ### 🧩 Architecture Summary
